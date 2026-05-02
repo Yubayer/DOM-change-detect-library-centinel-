@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOMSentinel — Documentation</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0d0d0d;
+    --surface:  #141414;
+    --border:   #222;
+    --text:     #e8e8e8;
+    --muted:    #666;
+    --accent:   #7c6aff;
+    --accent2:  #4fd1a5;
+    --accent3:  #f59e42;
+    --danger:   #f87171;
+    --code-bg:  #111;
+    --tag-bg:   #1c1c1c;
+    --radius:   8px;
+    --mono:     'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    --sans:     'Inter', system-ui, sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  /* ── layout ── */
+  .layout { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 1.5rem 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .sidebar-logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    padding: 0 1.25rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1rem;
+    letter-spacing: 0.04em;
+  }
+  .sidebar-logo span { color: var(--muted); font-weight: 400; }
+
+  .nav-group { margin-bottom: 0.25rem; }
+  .nav-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0.5rem 1.25rem 0.25rem;
+  }
+  .nav-link {
+    display: block;
+    font-size: 13px;
+    font-family: var(--mono);
+    color: var(--muted);
+    padding: 0.3rem 1.25rem;
+    text-decoration: none;
+    transition: color 0.15s, background 0.15s;
+    border-left: 2px solid transparent;
+  }
+  .nav-link:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+  .nav-link.active { color: var(--accent); border-left-color: var(--accent); }
+
+  .main {
+    flex: 1;
+    min-width: 0;
+    padding: 3rem 4rem;
+    max-width: 860px;
+  }
+
+  /* ── sections ── */
+  section { margin-bottom: 4rem; scroll-margin-top: 2rem; }
+
+  h1 { font-size: 28px; font-weight: 700; color: var(--text); margin-bottom: 0.5rem; }
+  h2 { font-size: 20px; font-weight: 600; color: var(--text); margin-bottom: 1rem; padding-top: 0.5rem; }
+  h3 { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 0.5rem; }
+
+  p { color: #aaa; margin-bottom: 0.75rem; line-height: 1.75; }
+  p strong { color: var(--text); font-weight: 600; }
+
+  /* ── tags ── */
+  .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  .tag-required { background: rgba(248,113,113,0.12); color: var(--danger); }
+  .tag-optional { background: rgba(124,106,255,0.12); color: var(--accent); }
+  .tag-default  { background: rgba(102,102,102,0.15); color: var(--muted); }
+
+  /* ── code blocks ── */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    overflow-x: auto;
+    margin: 0.75rem 0 1.25rem;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .cm  { color: #555; }          /* comment */
+  .ck  { color: #c084fc; }       /* keyword: const, class, new */
+  .cs  { color: var(--accent2);} /* string */
+  .cn  { color: var(--accent3);} /* number */
+  .cf  { color: #60a5fa; }       /* function / method name */
+  .cv  { color: var(--text); }   /* variable */
+  .cp  { color: var(--danger); } /* param name */
+  .co  { color: #a3e635; }       /* operator / punctuation accent */
+
+  /* ── param table ── */
+  .param-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 0.75rem 0 1.5rem;
+  }
+  .param-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .param-table td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid #1a1a1a;
+    vertical-align: top;
+    color: #aaa;
+  }
+  .param-table td:first-child {
+    font-family: var(--mono);
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .param-table tr:last-child td { border-bottom: none; }
+
+  /* ── example cards ── */
+  .example-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+  .example-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.75rem 1.25rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .example-id {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    background: rgba(124,106,255,0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.06em;
+  }
+  .example-id.green  { color: var(--accent2); background: rgba(79,209,165,0.1); }
+  .example-id.amber  { color: var(--accent3); background: rgba(245,158,66,0.1); }
+  .example-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .example-desc  { font-size: 12px; color: var(--muted); padding: 0.6rem 1.25rem 0; }
+  .example-card pre { margin: 0; border: none; border-radius: 0; border-top: 1px solid var(--border); }
+
+  /* ── option pills row ── */
+  .option-pills { display: flex; flex-wrap: wrap; gap: 5px; padding: 0.5rem 1.25rem; }
+  .pill {
+    font-size: 10px;
+    font-family: var(--mono);
+    padding: 2px 7px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .pill.on { border-color: var(--accent); color: var(--accent); background: rgba(124,106,255,0.08); }
+
+  /* ── callout ── */
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: rgba(124,106,255,0.06);
+    padding: 0.75rem 1rem;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    font-size: 13px;
+    color: #aaa;
+    margin: 0.75rem 0 1.25rem;
+  }
+  .callout.amber { border-color: var(--accent3); background: rgba(245,158,66,0.06); }
+  .callout.green { border-color: var(--accent2); background: rgba(79,209,165,0.06); }
+
+  /* ── section divider ── */
+  .section-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 2.5rem 0 1.5rem;
+  }
+  .section-divider-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--muted);
+  }
+  .section-divider-line { flex: 1; height: 1px; background: var(--border); }
+
+  /* ── hero ── */
+  .hero { padding: 2rem 0 3rem; }
+  .hero h1 { font-size: 32px; }
+  .hero-sub { color: var(--muted); font-size: 14px; margin-top: 0.5rem; }
+  .badge-row { display: flex; gap: 8px; margin-top: 1rem; flex-wrap: wrap; }
+  .badge {
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 3px 10px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  /* ── matrix table ── */
+  .matrix { width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--mono); }
+  .matrix th {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    text-align: center;
+    font-size: 11px;
+  }
+  .matrix td {
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--border);
+    text-align: center;
+    color: var(--muted);
+  }
+  .matrix td:first-child  { text-align: left; color: var(--text); }
+  .matrix td:nth-child(2) { color: var(--accent); }
+  .matrix .yes { color: var(--accent2); }
+  .matrix .no  { color: #2a2a2a; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ══ SIDEBAR ══════════════════════════════════════════════ -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">DOMSentinel <span>v2.1</span></div>
+
+    <div class="nav-group">
+      <div class="nav-label">শুরু</div>
+      <a class="nav-link" href="#intro">পরিচয়</a>
+      <a class="nav-link" href="#library">Library Code</a>
+      <a class="nav-link" href="#install">ব্যবহার শুরু</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">API</div>
+      <a class="nav-link" href="#watch">watch()</a>
+      <a class="nav-link" href="#unwatch">unwatch()</a>
+      <a class="nav-link" href="#pause">pause / resume</a>
+      <a class="nav-link" href="#list">listWatchers()</a>
+      <a class="nav-link" href="#destroy">destroy()</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Options</div>
+      <a class="nav-link" href="#relation">relation</a>
+      <a class="nav-link" href="#relationselector">relationSelector</a>
+      <a class="nav-link" href="#filter">filter</a>
+      <a class="nav-link" href="#callback">callback</a>
+      <a class="nav-link" href="#debounce">debounce</a>
+      <a class="nav-link" href="#once">once</a>
+      <a class="nav-link" href="#maxtriggers">maxTriggers</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Examples</div>
+      <a class="nav-link" href="#ex-target">target (A)</a>
+      <a class="nav-link" href="#ex-parent">parent (B)</a>
+      <a class="nav-link" href="#ex-child">child (C)</a>
+      <a class="nav-link" href="#ex-lifecycle">Lifecycle (D)</a>
+      <a class="nav-link" href="#matrix">Option Matrix</a>
+    </div>
+  </nav>
+
+  <!-- ══ MAIN ════════════════════════════════════════════════ -->
+  <main class="main">
+
+    <!-- HERO -->
+    <div class="hero" id="intro">
+      <h1>DOMSentinel</h1>
+      <p class="hero-sub">Production-grade DOM mutation detection system</p>
+      <div class="badge-row">
+        <span class="badge">v2.1</span>
+        <span class="badge">Zero dependency</span>
+        <span class="badge">~2KB minified</span>
+        <span class="badge">MutationObserver</span>
+      </div>
+    </div>
+
+    <section>
+      <p><strong>DOMSentinel</strong> একটা lightweight JavaScript library যেটা দিয়ে DOM-এর যেকোনো পরিবর্তন detect করা যায় এবং সেই পরিবর্তনের উপর ভিত্তি করে custom event fire করা যায়।</p>
+      <p>একটাই <code>MutationObserver</code> পুরো document watch করে। তুমি যতগুলো খুশি watcher register করতে পারো — প্রতিটা নিজের মতো কাজ করবে, একটা আরেকটাকে প্রভাবিত করবে না।</p>
+
+      <div class="callout">
+        <strong>কীভাবে কাজ করে:</strong><br>
+        DOM বদলায় → MutationObserver ধরে → প্রতিটা watcher match check করে → filter pass হলে → debounce → CustomEvent dispatch + callback call
+      </div>
+    </section>
+
+    <!-- LIBRARY CODE -->
+    <section id="library">
+      <h2>Library Code</h2>
+      <p>এই পুরো code টা তোমার project-এ copy করো। কোনো dependency নেই।</p>
+<pre><span class="cm">/* ============================================================
+ * DOMSentinel v2.1 — Production-grade DOM mutation detection
+ * Zero dependency | ~2KB | MutationObserver-based
+ * ============================================================ */</span>
+
+<span class="ck">class</span> <span class="cf">DOMSentinel</span> {
+
+  <span class="cm">/* ── private state ── */</span>
+  <span class="cv">#observer</span>       = <span class="ck">null</span>;   <span class="cm">// single shared MutationObserver</span>
+  <span class="cv">#watchers</span>       = [];     <span class="cm">// active WatchConfig objects</span>
+  <span class="cv">#debounceTimers</span> = <span class="ck">new</span> <span class="cf">Map</span>(); <span class="cm">// watchId → setTimeout handle</span>
+  <span class="cv">#triggerCounts</span>  = <span class="ck">new</span> <span class="cf">Map</span>(); <span class="cm">// watchId → fire count</span>
+  <span class="cv">#paused</span>         = <span class="ck">false</span>;   <span class="cm">// skip all processing when true</span>
+  <span class="cv">#idCounter</span>      = <span class="cn">0</span>;       <span class="cm">// monotonic watcher id</span>
+  <span class="cv">#debug</span>          = <span class="ck">false</span>;   <span class="cm">// verbose logging</span>
+
+  <span class="cm">/**
+   * @param {{ debug?: boolean }} [options]
+   */</span>
+  <span class="cf">constructor</span>({ <span class="cp">debug</span> = <span class="ck">false</span> } = {}) {
+    <span class="ck">this</span>.<span class="cv">#debug</span> = <span class="cv">debug</span>;
+    <span class="ck">this</span>.<span class="cv">#observer</span> = <span class="ck">new</span> <span class="cf">MutationObserver</span>(<span class="ck">this</span>.<span class="cv">#onMutations</span>.<span class="cf">bind</span>(<span class="ck">this</span>));
+    <span class="ck">this</span>.<span class="cv">#observer</span>.<span class="cf">observe</span>(document.<span class="cv">documentElement</span>, {
+      <span class="cv">childList</span>:             <span class="ck">true</span>,
+      <span class="cv">subtree</span>:               <span class="ck">true</span>,
+      <span class="cv">attributes</span>:            <span class="ck">true</span>,
+      <span class="cv">characterData</span>:         <span class="ck">true</span>,
+      <span class="cv">attributeOldValue</span>:     <span class="ck">true</span>,
+      <span class="cv">characterDataOldValue</span>: <span class="ck">true</span>,
+    });
+    <span class="ck">this</span>.<span class="cf">#log</span>(<span class="cs">'initialized'</span>);
+  }
+
+  <span class="cm">/* ── mutation pipeline ── */</span>
+
+  <span class="cv">#onMutations</span>(<span class="cp">mutations</span>) {
+    <span class="ck">if</span> (<span class="ck">this</span>.<span class="cv">#paused</span>) <span class="ck">return</span>;
+    <span class="ck">for</span> (<span class="ck">const</span> <span class="cv">mutation</span> <span class="ck">of</span> <span class="cp">mutations</span>) {
+      <span class="ck">for</span> (<span class="ck">const</span> <span class="cv">watcher</span> <span class="ck">of</span> <span class="ck">this</span>.<span class="cv">#watchers</span>) {
+        <span class="ck">try</span> {
+          <span class="ck">const</span> <span class="cv">matched</span> = <span class="ck">this</span>.<span class="cf">#resolveMatch</span>(<span class="cv">mutation</span>, <span class="cv">watcher</span>);
+          <span class="ck">if</span> (<span class="cv">matched</span>) <span class="ck">this</span>.<span class="cf">#handleMatch</span>(<span class="cv">matched</span>, <span class="cv">mutation</span>, <span class="cv">watcher</span>);
+        } <span class="ck">catch</span> (<span class="cv">err</span>) {
+          console.<span class="cf">error</span>(<span class="cs">`[DOMSentinel] watcher #<span class="cv">${<span class="cv">watcher</span>.<span class="cv">id</span>}</span> threw:`</span>, <span class="cv">err</span>);
+        }
+      }
+    }
+  }
+
+  <span class="cv">#resolveMatch</span>(<span class="cp">mutation</span>, <span class="cp">watcher</span>) {
+    <span class="ck">const</span> { <span class="cv">selector</span>, <span class="cv">relation</span>, <span class="cv">relationSelector</span> } = <span class="cv">watcher</span>;
+    <span class="ck">switch</span> (<span class="cv">relation</span>) {
+      <span class="ck">case</span> <span class="cs">'target'</span>: <span class="ck">return</span> <span class="ck">this</span>.<span class="cf">#matchTarget</span>(<span class="cv">mutation</span>, <span class="cv">selector</span>, <span class="cv">relationSelector</span>);
+      <span class="ck">case</span> <span class="cs">'parent'</span>: <span class="ck">return</span> <span class="ck">this</span>.<span class="cf">#matchParent</span>(<span class="cv">mutation</span>, <span class="cv">selector</span>, <span class="cv">relationSelector</span>);
+      <span class="ck">case</span> <span class="cs">'child'</span>:  <span class="ck">return</span> <span class="ck">this</span>.<span class="cf">#matchChild</span>(<span class="cv">mutation</span>, <span class="cv">selector</span>, <span class="cv">relationSelector</span>);
+      <span class="ck">default</span>:       <span class="ck">return</span> <span class="ck">null</span>;
+    }
+  }
+
+  <span class="cv">#matchTarget</span>(<span class="cp">mutation</span>, <span class="cp">selector</span>, <span class="cp">relationSelector</span>) {
+    <span class="ck">if</span> (<span class="cv">mutation</span>.<span class="cv">type</span> === <span class="cs">'childList'</span>) {
+      <span class="ck">if</span> (
+        <span class="cv">relationSelector</span> &&
+        <span class="cv">mutation</span>.<span class="cv">target</span>.<span class="cv">nodeType</span> === Node.<span class="cv">ELEMENT_NODE</span> &&
+        !<span class="cv">mutation</span>.<span class="cv">target</span>.<span class="cf">closest</span>(<span class="cv">relationSelector</span>)
+      ) <span class="ck">return</span> <span class="ck">null</span>;
+
+      <span class="ck">for</span> (<span class="ck">const</span> <span class="cv">node</span> <span class="ck">of</span> [...<span class="cv">mutation</span>.<span class="cv">addedNodes</span>, ...<span class="cv">mutation</span>.<span class="cv">removedNodes</span>]) {
+        <span class="ck">if</span> (<span class="cv">node</span>.<span class="cv">nodeType</span> !== Node.<span class="cv">ELEMENT_NODE</span>) <span class="ck">continue</span>;
+        <span class="ck">if</span> (<span class="cv">node</span>.<span class="cf">matches</span>(<span class="cv">selector</span>)) <span class="ck">return</span> <span class="cv">node</span>;
+        <span class="ck">const</span> <span class="cv">inner</span> = <span class="cv">node</span>.<span class="cf">querySelector</span>?.(<span class="cv">selector</span>);
+        <span class="ck">if</span> (<span class="cv">inner</span>) <span class="ck">return</span> <span class="cv">inner</span>;
+      }
+    }
+    <span class="ck">if</span> (<span class="cv">mutation</span>.<span class="cv">type</span> === <span class="cs">'attributes'</span> || <span class="cv">mutation</span>.<span class="cv">type</span> === <span class="cs">'characterData'</span>) {
+      <span class="ck">const</span> <span class="cv">el</span> = <span class="cv">mutation</span>.<span class="cv">target</span>.<span class="cv">nodeType</span> === Node.<span class="cv">ELEMENT_NODE</span>
+        ? <span class="cv">mutation</span>.<span class="cv">target</span>
+        : <span class="cv">mutation</span>.<span class="cv">target</span>.<span class="cv">parentElement</span>;
+      <span class="ck">if</span> (<span class="cv">el</span>?.<span class="cf">matches</span>(<span class="cv">selector</span>)) <span class="ck">return</span> <span class="cv">el</span>;
+    }
+    <span class="ck">return</span> <span class="ck">null</span>;
+  }
+
+  <span class="cv">#matchParent</span>(<span class="cp">mutation</span>, <span class="cp">selector</span>, <span class="cp">relationSelector</span>) {
+    <span class="ck">if</span> (<span class="cv">mutation</span>.<span class="cv">type</span> !== <span class="cs">'childList'</span>) <span class="ck">return</span> <span class="ck">null</span>;
+    <span class="ck">const</span> <span class="cv">parent</span> = <span class="cv">mutation</span>.<span class="cv">target</span>;
+    <span class="ck">if</span> (<span class="cv">parent</span>.<span class="cv">nodeType</span> !== Node.<span class="cv">ELEMENT_NODE</span>) <span class="ck">return</span> <span class="ck">null</span>;
+    <span class="ck">if</span> (<span class="cv">relationSelector</span> && !<span class="cv">parent</span>.<span class="cf">matches</span>(<span class="cv">relationSelector</span>)) <span class="ck">return</span> <span class="ck">null</span>;
+    <span class="ck">for</span> (<span class="ck">const</span> <span class="cv">node</span> <span class="ck">of</span> [...<span class="cv">mutation</span>.<span class="cv">addedNodes</span>, ...<span class="cv">mutation</span>.<span class="cv">removedNodes</span>]) {
+      <span class="ck">if</span> (<span class="cv">node</span>.<span class="cv">nodeType</span> !== Node.<span class="cv">ELEMENT_NODE</span>) <span class="ck">continue</span>;
+      <span class="ck">if</span> (<span class="cv">node</span>.<span class="cf">matches</span>(<span class="cv">selector</span>) || <span class="cv">node</span>.<span class="cf">querySelector</span>?.(<span class="cv">selector</span>)) <span class="ck">return</span> <span class="cv">parent</span>;
+    }
+    <span class="ck">return</span> <span class="ck">null</span>;
+  }
+
+  <span class="cv">#matchChild</span>(<span class="cp">mutation</span>, <span class="cp">selector</span>, <span class="cp">relationSelector</span>) {
+    <span class="ck">const</span> <span class="cv">origin</span> = <span class="cv">mutation</span>.<span class="cv">target</span>.<span class="cv">nodeType</span> === Node.<span class="cv">ELEMENT_NODE</span>
+      ? <span class="cv">mutation</span>.<span class="cv">target</span>
+      : <span class="cv">mutation</span>.<span class="cv">target</span>.<span class="cv">parentElement</span>;
+    <span class="ck">const</span> <span class="cv">target</span> = <span class="cv">origin</span>?.<span class="cf">closest</span>(<span class="cv">selector</span>) ?? <span class="ck">null</span>;
+    <span class="ck">if</span> (!<span class="cv">target</span>) <span class="ck">return</span> <span class="ck">null</span>;
+    <span class="ck">if</span> (<span class="cv">relationSelector</span> && !<span class="cv">origin</span>.<span class="cf">closest</span>(<span class="cv">relationSelector</span>)) <span class="ck">return</span> <span class="ck">null</span>;
+    <span class="ck">return</span> <span class="cv">target</span>;
+  }
+
+  <span class="cv">#handleMatch</span>(<span class="cp">element</span>, <span class="cp">mutation</span>, <span class="cp">watcher</span>) {
+    <span class="ck">const</span> <span class="cv">detail</span> = <span class="ck">this</span>.<span class="cf">#buildDetail</span>(<span class="cv">element</span>, <span class="cv">mutation</span>, <span class="cv">watcher</span>);
+    <span class="ck">if</span> (<span class="cv">watcher</span>.<span class="cv">filter</span> && !<span class="cv">watcher</span>.<span class="cf">filter</span>(<span class="cv">element</span>, <span class="cv">detail</span>)) <span class="ck">return</span>;
+    <span class="ck">if</span> (<span class="cv">watcher</span>.<span class="cv">debounce</span> > <span class="cn">0</span>) {
+      <span class="cf">clearTimeout</span>(<span class="ck">this</span>.<span class="cv">#debounceTimers</span>.<span class="cf">get</span>(<span class="cv">watcher</span>.<span class="cv">id</span>));
+      <span class="ck">this</span>.<span class="cv">#debounceTimers</span>.<span class="cf">set</span>(<span class="cv">watcher</span>.<span class="cv">id</span>, <span class="cf">setTimeout</span>(() => {
+        <span class="ck">this</span>.<span class="cv">#debounceTimers</span>.<span class="cf">delete</span>(<span class="cv">watcher</span>.<span class="cv">id</span>);
+        <span class="ck">this</span>.<span class="cf">#fire</span>(<span class="cv">element</span>, <span class="cv">detail</span>, <span class="cv">watcher</span>);
+      }, <span class="cv">watcher</span>.<span class="cv">debounce</span>));
+    } <span class="ck">else</span> {
+      <span class="ck">this</span>.<span class="cf">#fire</span>(<span class="cv">element</span>, <span class="cv">detail</span>, <span class="cv">watcher</span>);
+    }
+  }
+
+  <span class="cv">#fire</span>(<span class="cp">element</span>, <span class="cp">detail</span>, <span class="cp">watcher</span>) {
+    <span class="ck">const</span> <span class="cv">count</span> = (<span class="ck">this</span>.<span class="cv">#triggerCounts</span>.<span class="cf">get</span>(<span class="cv">watcher</span>.<span class="cv">id</span>) ?? <span class="cn">0</span>) + <span class="cn">1</span>;
+    <span class="ck">this</span>.<span class="cv">#triggerCounts</span>.<span class="cf">set</span>(<span class="cv">watcher</span>.<span class="cv">id</span>, <span class="cv">count</span>);
+    <span class="ck">this</span>.<span class="cf">#log</span>(<span class="cs">`watcher #<span class="cv">${<span class="cv">watcher</span>.<span class="cv">id</span>}</span> fired ×<span class="cv">${<span class="cv">count</span>}</span>`</span>);
+    <span class="ck">try</span> {
+      document.<span class="cf">dispatchEvent</span>(<span class="ck">new</span> <span class="cf">CustomEvent</span>(<span class="cv">watcher</span>.<span class="cv">eventName</span>, { <span class="cv">bubbles</span>: <span class="ck">false</span>, <span class="cv">detail</span> }));
+    } <span class="ck">catch</span> (<span class="cv">err</span>) {
+      console.<span class="cf">error</span>(<span class="cs">`[DOMSentinel] dispatch failed:`</span>, <span class="cv">err</span>);
+    }
+    <span class="ck">if</span> (<span class="ck">typeof</span> <span class="cv">watcher</span>.<span class="cv">callback</span> === <span class="cs">'function'</span>) {
+      <span class="ck">try</span> { <span class="cv">watcher</span>.<span class="cf">callback</span>(<span class="cv">detail</span>); } <span class="ck">catch</span> (<span class="cv">err</span>) {
+        console.<span class="cf">error</span>(<span class="cs">`[DOMSentinel] callback error:`</span>, <span class="cv">err</span>);
+      }
+    }
+    <span class="ck">if</span> (<span class="cv">watcher</span>.<span class="cv">once</span> || (<span class="cv">watcher</span>.<span class="cv">maxTriggers</span> > <span class="cn">0</span> && <span class="cv">count</span> >= <span class="cv">watcher</span>.<span class="cv">maxTriggers</span>)) {
+      <span class="ck">this</span>.<span class="cf">unwatch</span>(<span class="cv">watcher</span>.<span class="cv">id</span>);
+    }
+  }
+
+  <span class="cv">#buildDetail</span>(<span class="cp">element</span>, <span class="cp">mutation</span>, <span class="cp">watcher</span>) {
+    <span class="ck">return</span> {
+      <span class="cv">element</span>,
+      <span class="cv">watcherId</span>:        <span class="cv">watcher</span>.<span class="cv">id</span>,
+      <span class="cv">relation</span>:         <span class="cv">watcher</span>.<span class="cv">relation</span>,
+      <span class="cv">relationSelector</span>: <span class="cv">watcher</span>.<span class="cv">relationSelector</span>,
+      <span class="cv">mutationType</span>:     <span class="cv">mutation</span>.<span class="cv">type</span>,
+      <span class="cv">added</span>:            [...(<span class="cv">mutation</span>.<span class="cv">addedNodes</span>   ?? [])],
+      <span class="cv">removed</span>:          [...(<span class="cv">mutation</span>.<span class="cv">removedNodes</span> ?? [])],
+      <span class="cv">attributeName</span>:    <span class="cv">mutation</span>.<span class="cv">attributeName</span>  ?? <span class="ck">null</span>,
+      <span class="cv">oldValue</span>:         <span class="cv">mutation</span>.<span class="cv">oldValue</span>       ?? <span class="ck">null</span>,
+      <span class="cv">timestamp</span>:        Date.<span class="cf">now</span>(),
+    };
+  }
+
+  <span class="cv">#log</span>(...<span class="cp">args</span>) {
+    <span class="ck">if</span> (<span class="ck">this</span>.<span class="cv">#debug</span>) console.<span class="cf">log</span>(<span class="cs">'[DOMSentinel]'</span>, ...<span class="cv">args</span>);
+  }
+
+  <span class="cm">/* ── public API ── */</span>
+
+  <span class="cf">watch</span>({
+    <span class="cp">selector</span>,
+    <span class="cp">relation</span>         = <span class="cs">'target'</span>,
+    <span class="cp">relationSelector</span> = <span class="ck">null</span>,
+    <span class="cp">eventName</span>,
+    <span class="cp">callback</span>         = <span class="ck">null</span>,
+    <span class="cp">filter</span>           = <span class="ck">null</span>,
+    <span class="cp">debounce</span>         = <span class="cn">0</span>,
+    <span class="cp">once</span>             = <span class="ck">false</span>,
+    <span class="cp">maxTriggers</span>      = <span class="cn">0</span>,
+  } = {}) {
+    <span class="ck">if</span> (!<span class="cv">selector</span> || <span class="ck">typeof</span> <span class="cv">selector</span> !== <span class="cs">'string'</span>)
+      <span class="ck">throw new</span> <span class="cf">TypeError</span>(<span class="cs">'[DOMSentinel] "selector" must be a non-empty string.'</span>);
+    <span class="ck">if</span> (!<span class="cv">eventName</span> || <span class="ck">typeof</span> <span class="cv">eventName</span> !== <span class="cs">'string'</span>)
+      <span class="ck">throw new</span> <span class="cf">TypeError</span>(<span class="cs">'[DOMSentinel] "eventName" must be a non-empty string.'</span>);
+    <span class="ck">if</span> (![<span class="cs">'target'</span>, <span class="cs">'parent'</span>, <span class="cs">'child'</span>].<span class="cf">includes</span>(<span class="cv">relation</span>))
+      <span class="ck">throw new</span> <span class="cf">TypeError</span>(<span class="cs">'[DOMSentinel] "relation" must be: target | parent | child'</span>);
+    <span class="ck">if</span> (<span class="cv">filter</span>   !== <span class="ck">null</span> && <span class="ck">typeof</span> <span class="cv">filter</span>   !== <span class="cs">'function'</span>)
+      <span class="ck">throw new</span> <span class="cf">TypeError</span>(<span class="cs">'[DOMSentinel] "filter" must be a function or null.'</span>);
+    <span class="ck">if</span> (<span class="cv">callback</span> !== <span class="ck">null</span> && <span class="ck">typeof</span> <span class="cv">callback</span> !== <span class="cs">'function'</span>)
+      <span class="ck">throw new</span> <span class="cf">TypeError</span>(<span class="cs">'[DOMSentinel] "callback" must be a function or null.'</span>);
+
+    <span class="ck">const</span> <span class="cv">id</span> = ++<span class="ck">this</span>.<span class="cv">#idCounter</span>;
+    <span class="ck">this</span>.<span class="cv">#watchers</span>.<span class="cf">push</span>({
+      <span class="cv">id</span>, <span class="cv">selector</span>, <span class="cv">relation</span>, <span class="cv">relationSelector</span>,
+      <span class="cv">eventName</span>, <span class="cv">callback</span>, <span class="cv">filter</span>,
+      <span class="cv">debounce</span>:    Math.<span class="cf">max</span>(<span class="cn">0</span>, Number(<span class="cv">debounce</span>)    || <span class="cn">0</span>),
+      <span class="cv">once</span>:        Boolean(<span class="cv">once</span>),
+      <span class="cv">maxTriggers</span>: Math.<span class="cf">max</span>(<span class="cn">0</span>, Number(<span class="cv">maxTriggers</span>) || <span class="cn">0</span>),
+    });
+    <span class="ck">this</span>.<span class="cf">#log</span>(<span class="cs">`watcher #<span class="cv">${<span class="cv">id</span>}</span> registered`</span>, <span class="cv">selector</span>);
+    <span class="ck">return</span> <span class="cv">id</span>;
+  }
+
+  <span class="cf">unwatch</span>(<span class="cp">watchId</span>) {
+    <span class="cf">clearTimeout</span>(<span class="ck">this</span>.<span class="cv">#debounceTimers</span>.<span class="cf">get</span>(<span class="cv">watchId</span>));
+    <span class="ck">this</span>.<span class="cv">#debounceTimers</span>.<span class="cf">delete</span>(<span class="cv">watchId</span>);
+    <span class="ck">this</span>.<span class="cv">#triggerCounts</span>.<span class="cf">delete</span>(<span class="cv">watchId</span>);
+    <span class="ck">this</span>.<span class="cv">#watchers</span> = <span class="ck">this</span>.<span class="cv">#watchers</span>.<span class="cf">filter</span>(<span class="cv">w</span> => <span class="cv">w</span>.<span class="cv">id</span> !== <span class="cv">watchId</span>);
+  }
+
+  <span class="cf">pause</span>()   { <span class="ck">this</span>.<span class="cv">#paused</span> = <span class="ck">true</span>;  <span class="ck">this</span>.<span class="cf">#log</span>(<span class="cs">'paused'</span>);  }
+  <span class="cf">resume</span>()  { <span class="ck">this</span>.<span class="cv">#paused</span> = <span class="ck">false</span>; <span class="ck">this</span>.<span class="cf">#log</span>(<span class="cs">'resumed'</span>); }
+  <span class="ck">get</span> <span class="cf">isPaused</span>() { <span class="ck">return</span> <span class="ck">this</span>.<span class="cv">#paused</span>; }
+
+  <span class="cf">listWatchers</span>() {
+    <span class="ck">return</span> <span class="ck">this</span>.<span class="cv">#watchers</span>.<span class="cf">map</span>(<span class="cv">w</span> => ({
+      <span class="cv">id</span>: <span class="cv">w</span>.<span class="cv">id</span>, <span class="cv">selector</span>: <span class="cv">w</span>.<span class="cv">selector</span>, <span class="cv">relation</span>: <span class="cv">w</span>.<span class="cv">relation</span>,
+      <span class="cv">relationSelector</span>: <span class="cv">w</span>.<span class="cv">relationSelector</span>, <span class="cv">eventName</span>: <span class="cv">w</span>.<span class="cv">eventName</span>,
+      <span class="cv">debounce</span>: <span class="cv">w</span>.<span class="cv">debounce</span>, <span class="cv">once</span>: <span class="cv">w</span>.<span class="cv">once</span>, <span class="cv">maxTriggers</span>: <span class="cv">w</span>.<span class="cv">maxTriggers</span>,
+      <span class="cv">triggerCount</span>: <span class="ck">this</span>.<span class="cv">#triggerCounts</span>.<span class="cf">get</span>(<span class="cv">w</span>.<span class="cv">id</span>) ?? <span class="cn">0</span>,
+    }));
+  }
+
+  <span class="cf">destroy</span>() {
+    <span class="ck">this</span>.<span class="cv">#observer</span>.<span class="cf">disconnect</span>();
+    <span class="ck">this</span>.<span class="cv">#debounceTimers</span>.<span class="cf">forEach</span>(<span class="cv">clearTimeout</span>);
+    <span class="ck">this</span>.<span class="cv">#debounceTimers</span>.<span class="cf">clear</span>();
+    <span class="ck">this</span>.<span class="cv">#triggerCounts</span>.<span class="cf">clear</span>();
+    <span class="ck">this</span>.<span class="cv">#watchers</span> = [];
+    <span class="ck">this</span>.<span class="cf">#log</span>(<span class="cs">'destroyed'</span>);
+  }
+}</pre>
+    </section>
+
+    <!-- INSTALL -->
+    <section id="install">
+      <h2>ব্যবহার শুরু</h2>
+      <p>একটা instance বানাও, তারপর যত খুশি watcher register করো।</p>
+<pre><span class="ck">const</span> <span class="cv">sentinel</span> = <span class="ck">new</span> <span class="cf">DOMSentinel</span>(); <span class="cm">// production</span>
+<span class="ck">const</span> <span class="cv">sentinel</span> = <span class="ck">new</span> <span class="cf">DOMSentinel</span>({ <span class="cv">debug</span>: <span class="ck">true</span> }); <span class="cm">// development</span></pre>
+
+      <p><strong>detail object</strong> — প্রতিটা event আর callback-এ এই data পাবে:</p>
+<pre><span class="cm">// e.detail বা callback-এর parameter</span>
+{
+  <span class="cv">element</span>:          Element,   <span class="cm">// matched DOM element</span>
+  <span class="cv">watcherId</span>:        Number,    <span class="cm">// কোন watcher fire করেছে</span>
+  <span class="cv">relation</span>:         String,    <span class="cm">// 'target' | 'parent' | 'child'</span>
+  <span class="cv">relationSelector</span>: String,    <span class="cm">// narrowing selector (বা null)</span>
+  <span class="cv">mutationType</span>:     String,    <span class="cm">// 'childList' | 'attributes' | 'characterData'</span>
+  <span class="cv">added</span>:            Node[],    <span class="cm">// নতুন nodes</span>
+  <span class="cv">removed</span>:          Node[],    <span class="cm">// সরানো nodes</span>
+  <span class="cv">attributeName</span>:    String,    <span class="cm">// কোন attribute বদলেছে (বা null)</span>
+  <span class="cv">oldValue</span>:         String,    <span class="cm">// আগের value (বা null)</span>
+  <span class="cv">timestamp</span>:        Number,    <span class="cm">// Date.now()</span>
+}</pre>
+    </section>
+
+    <!-- ══ API ══════════════════════════════════════════════ -->
+
+    <section id="watch">
+      <h2>watch()</h2>
+      <p>নতুন watcher register করো। <strong>watchId</strong> return করে — পরে <code>unwatch()</code>-এ লাগবে।</p>
+
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Required</th><th>কী করে</th></tr>
+        <tr><td>selector</td><td>string</td><td>—</td><td><span class="tag tag-required">required</span></td><td>কোন element watch করবে (CSS selector)</td></tr>
+        <tr><td>relation</td><td>string</td><td>target</td><td><span class="tag tag-optional">optional</span></td><td>কোন ধরনের change — target / parent / child</td></tr>
+        <tr><td>relationSelector</td><td>string</td><td>null</td><td><span class="tag tag-optional">optional</span></td><td>relation আরো narrow করে</td></tr>
+        <tr><td>eventName</td><td>string</td><td>—</td><td><span class="tag tag-required">required</span></td><td>match হলে কোন CustomEvent fire হবে</td></tr>
+        <tr><td>callback</td><td>function</td><td>null</td><td><span class="tag tag-optional">optional</span></td><td>inline function — event-এর পাশাপাশি চলে</td></tr>
+        <tr><td>filter</td><td>function</td><td>null</td><td><span class="tag tag-optional">optional</span></td><td>match drop বা allow করার predicate</td></tr>
+        <tr><td>debounce</td><td>number (ms)</td><td>0</td><td><span class="tag tag-optional">optional</span></td><td>rapid mutations batch করে</td></tr>
+        <tr><td>once</td><td>boolean</td><td>false</td><td><span class="tag tag-optional">optional</span></td><td>একবার fire করে auto-remove</td></tr>
+        <tr><td>maxTriggers</td><td>number</td><td>0</td><td><span class="tag tag-optional">optional</span></td><td>N বার fire-এর পর auto-remove (0 = unlimited)</td></tr>
+      </table>
+    </section>
+
+    <section id="unwatch">
+      <h2>unwatch(watchId)</h2>
+      <p>নির্দিষ্ট watcher সরিয়ে দাও। Pending debounce timer-ও cancel হয়ে যায়।</p>
+<pre><span class="ck">const</span> <span class="cv">id</span> = <span class="cv">sentinel</span>.<span class="cf">watch</span>({ <span class="cv">selector</span>: <span class="cs">'.card'</span>, <span class="cv">eventName</span>: <span class="cs">'card:x'</span> });
+<span class="cv">sentinel</span>.<span class="cf">unwatch</span>(<span class="cv">id</span>); <span class="cm">// সরিয়ে দাও</span></pre>
+    </section>
+
+    <section id="pause">
+      <h2>pause() / resume()</h2>
+      <p>নিজের code-এর DOM write-এ sentinel react করবে না — তার আগে <code>pause()</code>, পরে <code>resume()</code>।</p>
+      <div class="callout amber">pause চলাকালীন যে mutations হয় সেগুলো permanently lost — queue হয় না।</div>
+<pre><span class="ck">function</span> <span class="cf">replaceCards</span>(<span class="cv">html</span>) {
+  <span class="cv">sentinel</span>.<span class="cf">pause</span>();
+  <span class="cv">grid</span>.<span class="cv">innerHTML</span> = <span class="cv">html</span>;   <span class="cm">// আমাদের নিজের write</span>
+  <span class="cv">sentinel</span>.<span class="cf">resume</span>();
+}
+
+<span class="cm">// বর্তমান state check করতে</span>
+<span class="ck">if</span> (<span class="cv">sentinel</span>.<span class="cv">isPaused</span>) { <span class="cm">/* ... */</span> }</pre>
+    </section>
+
+    <section id="list">
+      <h2>listWatchers()</h2>
+      <p>সব active watcher-এর snapshot — debugging-এ কাজে আসে।</p>
+<pre>console.<span class="cf">table</span>(<span class="cv">sentinel</span>.<span class="cf">listWatchers</span>());
+<span class="cm">// id | selector | relation | eventName | debounce | triggerCount ...</span></pre>
+    </section>
+
+    <section id="destroy">
+      <h2>destroy()</h2>
+      <p>Observer disconnect করো, সব watcher clear করো, সব timer cancel করো। Page unload বা SPA route change-এ অবশ্যই call করো।</p>
+<pre>window.<span class="cf">addEventListener</span>(<span class="cs">'beforeunload'</span>, () => <span class="cv">sentinel</span>.<span class="cf">destroy</span>());</pre>
+    </section>
+
+    <!-- ══ OPTIONS ══════════════════════════════════════════ -->
+
+    <section id="relation">
+      <h2>relation</h2>
+      <p>তুমি যে element watch করতে চাও তার সাথে mutation-এর <strong>সম্পর্ক</strong> কী।</p>
+
+      <h3>target</h3>
+      <p>Element নিজেই DOM-এ add/remove হয়েছে, অথবা তার নিজের attribute/text বদলেছে।</p>
+<pre><span class="cv">sentinel</span>.<span class="cf">watch</span>({ <span class="cv">selector</span>: <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'target'</span>, <span class="cv">eventName</span>: <span class="cs">'card:added'</span> });</pre>
+
+      <h3>parent</h3>
+      <p>Element-এর parent-এ child add/remove হয়েছে। Matched element হিসেবে <strong>parent</strong>-কে return করে।</p>
+<pre><span class="cm">// .product-grid এর ভেতরে card ঢুকলে → grid টাকে return করবে</span>
+<span class="cv">sentinel</span>.<span class="cf">watch</span>({ <span class="cv">selector</span>: <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'parent'</span>, <span class="cv">eventName</span>: <span class="cs">'grid:changed'</span> });</pre>
+
+      <h3>child</h3>
+      <p>Element-এর ভেতরে কিছু বদলেছে। <code>closest()</code> দিয়ে উপরে উঠে enclosing element খুঁজে বের করে।</p>
+<pre><span class="cm">// .card-product এর ভেতরে যেকোনো কিছু বদলালে → card-কে return করবে</span>
+<span class="cv">sentinel</span>.<span class="cf">watch</span>({ <span class="cv">selector</span>: <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'child'</span>, <span class="cv">eventName</span>: <span class="cs">'card:changed'</span> });</pre>
+    </section>
+
+    <section id="relationselector">
+      <h2>relationSelector</h2>
+      <p>relation-কে আরো specific করে। তিনটা relation-এই কাজ করে।</p>
+<pre><span class="cm">// target: শুধু .product-grid এর ভেতরে card add হলে fire করবে</span>
+<span class="cv">sentinel</span>.<span class="cf">watch</span>({
+  <span class="cv">selector</span>:         <span class="cs">'.card-product'</span>,
+  <span class="cv">relation</span>:         <span class="cs">'target'</span>,
+  <span class="cv">relationSelector</span>: <span class="cs">'.product-grid'</span>,  <span class="cm">// ← শুধু এই container</span>
+  <span class="cv">eventName</span>:        <span class="cs">'card:in-grid'</span>,
+});
+
+<span class="cm">// parent: parent অবশ্যই .product-grid হতে হবে</span>
+<span class="cv">sentinel</span>.<span class="cf">watch</span>({
+  <span class="cv">selector</span>:         <span class="cs">'.card-product'</span>,
+  <span class="cv">relation</span>:         <span class="cs">'parent'</span>,
+  <span class="cv">relationSelector</span>: <span class="cs">'.product-grid'</span>,  <span class="cm">// ← শুধু এই parent</span>
+  <span class="cv">eventName</span>:        <span class="cs">'grid:updated'</span>,
+});
+
+<span class="cm">// child: mutation অবশ্যই .card-product__price এর ভেতরে হতে হবে</span>
+<span class="cv">sentinel</span>.<span class="cf">watch</span>({
+  <span class="cv">selector</span>:         <span class="cs">'.card-product'</span>,
+  <span class="cv">relation</span>:         <span class="cs">'child'</span>,
+  <span class="cv">relationSelector</span>: <span class="cs">'.card-product__price'</span>,  <span class="cm">// ← শুধু এই subtree</span>
+  <span class="cv">eventName</span>:        <span class="cs">'card:price-changed'</span>,
+});</pre>
+    </section>
+
+    <section id="filter">
+      <h2>filter</h2>
+      <p>Relation match হওয়ার পরে এই function চলে। <code>false</code> return করলে সেই match silently drop হয়।</p>
+<pre><span class="cv">sentinel</span>.<span class="cf">watch</span>({
+  <span class="cv">selector</span>:  <span class="cs">'.card-product'</span>,
+  <span class="cv">relation</span>:  <span class="cs">'target'</span>,
+  <span class="cv">eventName</span>: <span class="cs">'card:unloaded'</span>,
+
+  <span class="cm">// শুধু তখনই fire করো যখন review load হয়নি</span>
+  <span class="cv">filter</span>: (<span class="cv">element</span>, <span class="cv">detail</span>) => {
+    <span class="ck">return</span> <span class="cv">element</span>.<span class="cv">dataset</span>.<span class="cv">reviewLoaded</span> !== <span class="cs">'true'</span>;
+  },
+});</pre>
+      <div class="callout">filter-এ দুটো parameter আসে: <strong>element</strong> (matched DOM element) আর <strong>detail</strong> (পুরো mutation info)।</div>
+    </section>
+
+    <section id="callback">
+      <h2>callback</h2>
+      <p>EventListener আলাদা করে লেখা ছাড়াই inline function দিতে পারো। Event আর callback <strong>একসাথে</strong> fire হয় — একটা আরেকটাকে replace করে না।</p>
+<pre><span class="cv">sentinel</span>.<span class="cf">watch</span>({
+  <span class="cv">selector</span>:  <span class="cs">'.card-product'</span>,
+  <span class="cv">eventName</span>: <span class="cs">'card:added'</span>,
+
+  <span class="cm">// inline কাজ: review inject করো</span>
+  <span class="cv">callback</span>: ({ <span class="cv">element</span>: <span class="cv">card</span> }) => {
+    <span class="cf">fetchReview</span>(<span class="cv">card</span>.<span class="cv">dataset</span>.<span class="cv">productId</span>);
+  },
+});
+
+<span class="cm">// আলাদা concern: analytics</span>
+document.<span class="cf">addEventListener</span>(<span class="cs">'card:added'</span>, ({ <span class="cv">detail</span> }) => {
+  analytics.<span class="cf">track</span>(<span class="cs">'card_impression'</span>, { <span class="cv">id</span>: <span class="cv">detail</span>.<span class="cv">element</span>.<span class="cv">dataset</span>.<span class="cv">productId</span> });
+});</pre>
+    </section>
+
+    <section id="debounce">
+      <h2>debounce</h2>
+      <p>AJAX filter করলে ২০-৩০টা card একসাথে add হয়। প্রতিটার জন্য আলাদা API call না করে debounce দাও — burst শেষ হলে একবার fire করবে।</p>
+<pre><span class="cv">sentinel</span>.<span class="cf">watch</span>({
+  <span class="cv">selector</span>:  <span class="cs">'.card-product'</span>,
+  <span class="cv">relation</span>:  <span class="cs">'target'</span>,
+  <span class="cv">eventName</span>: <span class="cs">'card:settled'</span>,
+  <span class="cv">debounce</span>:  <span class="cn">100</span>,  <span class="cm">// ১০০ms চুপ থাকলে তবেই fire করবে</span>
+});</pre>
+      <div class="callout">card add → card add → card add → ... 100ms চুপ → 🔥 একবার fire</div>
+    </section>
+
+    <section id="once">
+      <h2>once</h2>
+      <p>প্রথমবার fire করার পরে watcher নিজেই সরে যায়।</p>
+<pre><span class="cv">sentinel</span>.<span class="cf">watch</span>({
+  <span class="cv">selector</span>:  <span class="cs">'.card-product'</span>,
+  <span class="cv">relation</span>:  <span class="cs">'target'</span>,
+  <span class="cv">eventName</span>: <span class="cs">'card:first-ever'</span>,
+  <span class="cv">once</span>:      <span class="ck">true</span>,
+  <span class="cv">callback</span>:  () => <span class="cf">initTooltips</span>(), <span class="cm">// প্রথম কার্ড এলেই init, তারপর বন্ধ</span>
+});</pre>
+    </section>
+
+    <section id="maxtriggers">
+      <h2>maxTriggers</h2>
+      <p>N বার fire হওয়ার পরে watcher auto-remove হয়ে যায়। <code>once: true</code> আর <code>maxTriggers</code> একসাথে দিলে <code>once</code> জেতে।</p>
+<pre><span class="cv">sentinel</span>.<span class="cf">watch</span>({
+  <span class="cv">selector</span>:    <span class="cs">'.card-product'</span>,
+  <span class="cv">eventName</span>:   <span class="cs">'card:impression'</span>,
+  <span class="cv">maxTriggers</span>: <span class="cn">5</span>,  <span class="cm">// ৫বার fire হলে auto-remove</span>
+  <span class="cv">callback</span>:    ({ <span class="cv">element</span> }) => analytics.<span class="cf">track</span>(<span class="cs">'impression'</span>, { <span class="cv">id</span>: <span class="cv">element</span>.<span class="cv">dataset</span>.<span class="cv">productId</span> }),
+});</pre>
+    </section>
+
+    <!-- ══ EXAMPLES ══════════════════════════════════════════ -->
+
+    <div class="section-divider">
+      <span class="section-divider-label">Examples — target</span>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <section id="ex-target">
+      <h2>A — relation: 'target'</h2>
+      <p>.card-product element নিজেই DOM-এ add/remove হয়েছে।</p>
+
+      <!-- A-1 -->
+      <div class="example-card">
+        <div class="example-header">
+          <span class="example-id">A-1</span>
+          <span class="example-title">MINIMUM — শুধু selector + eventName</span>
+        </div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span>
+          <span class="pill">relationSelector</span><span class="pill">filter</span><span class="pill">callback</span><span class="pill">debounce</span><span class="pill">once</span><span class="pill">maxTriggers</span>
+        </div>
+        <div class="example-desc">Event আলাদা করে listen করো।</div>
+<pre>sentinel.<span class="cf">watch</span>({ <span class="cv">selector</span>: <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'target'</span>, <span class="cv">eventName</span>: <span class="cs">'card:a1'</span> });
+
+document.<span class="cf">addEventListener</span>(<span class="cs">'card:a1'</span>, ({ <span class="cv">detail</span> }) => {
+  console.<span class="cf">log</span>(<span class="cs">'[A-1] card mutated:'</span>, <span class="cv">detail</span>.<span class="cv">element</span>);
+});</pre>
+      </div>
+
+      <!-- A-2 -->
+      <div class="example-card">
+        <div class="example-header">
+          <span class="example-id">A-2</span>
+          <span class="example-title">+ callback — inline function</span>
+        </div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span><span class="pill on">callback</span>
+          <span class="pill">relationSelector</span><span class="pill">filter</span><span class="pill">debounce</span><span class="pill">once</span><span class="pill">maxTriggers</span>
+        </div>
+        <div class="example-desc">addEventListener ছাড়া সরাসরি function দাও।</div>
+<pre>sentinel.<span class="cf">watch</span>({
+  <span class="cv">selector</span>:  <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'target'</span>, <span class="cv">eventName</span>: <span class="cs">'card:a2'</span>,
+  <span class="cv">callback</span>:  ({ <span class="cv">element</span> }) => console.<span class="cf">log</span>(<span class="cs">'[A-2]'</span>, <span class="cv">element</span>),
+});</pre>
+      </div>
+
+      <!-- A-3 -->
+      <div class="example-card">
+        <div class="example-header">
+          <span class="example-id">A-3</span>
+          <span class="example-title">+ relationSelector — শুধু নির্দিষ্ট container-এ</span>
+        </div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span><span class="pill on">callback</span><span class="pill on">relationSelector</span>
+          <span class="pill">filter</span><span class="pill">debounce</span><span class="pill">once</span><span class="pill">maxTriggers</span>
+        </div>
+        <div class="example-desc">.product-grid এর বাইরে card add হলে ignore করবে।</div>
+<pre>sentinel.<span class="cf">watch</span>({
+  <span class="cv">selector</span>: <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'target'</span>, <span class="cv">eventName</span>: <span class="cs">'card:a3'</span>,
+  <span class="cv">relationSelector</span>: <span class="cs">'.product-grid'</span>,
+  <span class="cv">callback</span>: ({ <span class="cv">element</span> }) => console.<span class="cf">log</span>(<span class="cs">'[A-3] in grid:'</span>, <span class="cv">element</span>),
+});</pre>
+      </div>
+
+      <!-- A-4 -->
+      <div class="example-card">
+        <div class="example-header">
+          <span class="example-id">A-4</span>
+          <span class="example-title">+ filter — specific card type</span>
+        </div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span><span class="pill on">callback</span><span class="pill on">filter</span>
+          <span class="pill">relationSelector</span><span class="pill">debounce</span><span class="pill">once</span><span class="pill">maxTriggers</span>
+        </div>
+        <div class="example-desc">শুধু featured card হলে fire করবে।</div>
+<pre>sentinel.<span class="cf">watch</span>({
+  <span class="cv">selector</span>: <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'target'</span>, <span class="cv">eventName</span>: <span class="cs">'card:a4'</span>,
+  <span class="cv">filter</span>:   (<span class="cv">card</span>) => <span class="cv">card</span>.<span class="cv">dataset</span>.<span class="cv">productType</span> === <span class="cs">'featured'</span>,
+  <span class="cv">callback</span>: ({ <span class="cv">element</span> }) => console.<span class="cf">log</span>(<span class="cs">'[A-4] featured:'</span>, <span class="cv">element</span>.<span class="cv">dataset</span>.<span class="cv">productId</span>),
+});</pre>
+      </div>
+
+      <!-- A-5 -->
+      <div class="example-card">
+        <div class="example-header">
+          <span class="example-id">A-5</span>
+          <span class="example-title">+ debounce — AJAX burst সামলানো</span>
+        </div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span><span class="pill on">callback</span><span class="pill on">debounce</span>
+          <span class="pill">relationSelector</span><span class="pill">filter</span><span class="pill">once</span><span class="pill">maxTriggers</span>
+        </div>
+        <div class="example-desc">Filter-এ ২৪টা card একসাথে add হলে burst শেষে একবার fire।</div>
+<pre>sentinel.<span class="cf">watch</span>({
+  <span class="cv">selector</span>: <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'target'</span>, <span class="cv">eventName</span>: <span class="cs">'card:a5'</span>,
+  <span class="cv">debounce</span>: <span class="cn">100</span>,
+  <span class="cv">callback</span>: ({ <span class="cv">element</span> }) => console.<span class="cf">log</span>(<span class="cs">'[A-5] settled:'</span>, <span class="cv">element</span>),
+});</pre>
+      </div>
+
+      <!-- A-6 -->
+      <div class="example-card">
+        <div class="example-header">
+          <span class="example-id">A-6</span>
+          <span class="example-title">+ once — প্রথম card এলে init</span>
+        </div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span><span class="pill on">callback</span><span class="pill on">once</span>
+          <span class="pill">relationSelector</span><span class="pill">filter</span><span class="pill">debounce</span><span class="pill">maxTriggers</span>
+        </div>
+        <div class="example-desc">প্রথম কার্ড ডোমে ঢুকলে tooltip init করো, তারপর watcher বন্ধ।</div>
+<pre>sentinel.<span class="cf">watch</span>({
+  <span class="cv">selector</span>: <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'target'</span>, <span class="cv">eventName</span>: <span class="cs">'card:a6'</span>,
+  <span class="cv">once</span>:     <span class="ck">true</span>,
+  <span class="cv">callback</span>: () => <span class="cf">initTooltips</span>(),
+});</pre>
+      </div>
+
+      <!-- A-7 -->
+      <div class="example-card">
+        <div class="example-header">
+          <span class="example-id">A-7</span>
+          <span class="example-title">+ maxTriggers — প্রথম N impression</span>
+        </div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span><span class="pill on">callback</span><span class="pill on">maxTriggers</span>
+          <span class="pill">relationSelector</span><span class="pill">filter</span><span class="pill">debounce</span><span class="pill">once</span>
+        </div>
+        <div class="example-desc">৫টা card impression track করার পরে auto-remove।</div>
+<pre>sentinel.<span class="cf">watch</span>({
+  <span class="cv">selector</span>:    <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'target'</span>, <span class="cv">eventName</span>: <span class="cs">'card:a7'</span>,
+  <span class="cv">maxTriggers</span>: <span class="cn">5</span>,
+  <span class="cv">callback</span>:    ({ <span class="cv">element</span> }) => analytics.<span class="cf">track</span>(<span class="cs">'impression'</span>, { <span class="cv">id</span>: <span class="cv">element</span>.<span class="cv">dataset</span>.<span class="cv">productId</span> }),
+});</pre>
+      </div>
+
+      <!-- A-8 -->
+      <div class="example-card">
+        <div class="example-header">
+          <span class="example-id">A-8</span>
+          <span class="example-title">+ filter + debounce — Review API inject</span>
+        </div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span><span class="pill on">callback</span><span class="pill on">filter</span><span class="pill on">debounce</span>
+          <span class="pill">relationSelector</span><span class="pill">once</span><span class="pill">maxTriggers</span>
+        </div>
+        <div class="example-desc">Unloaded card detect করে review fetch করো — burst safe।</div>
+<pre>sentinel.<span class="cf">watch</span>({
+  <span class="cv">selector</span>: <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'target'</span>, <span class="cv">eventName</span>: <span class="cs">'card:a8'</span>,
+  <span class="cv">filter</span>:   (<span class="cv">card</span>) => <span class="cv">card</span>.<span class="cv">dataset</span>.<span class="cv">reviewLoaded</span> !== <span class="cs">'true'</span>,
+  <span class="cv">debounce</span>: <span class="cn">80</span>,
+  <span class="cv">callback</span>: <span class="ck">async</span> ({ <span class="cv">element</span>: <span class="cv">card</span>, <span class="cv">added</span>, <span class="cv">removed</span> }) => {
+    <span class="ck">if</span> (<span class="cv">removed</span>.<span class="cv">length</span> && !<span class="cv">added</span>.<span class="cv">length</span>) <span class="ck">return</span>;
+    <span class="cv">card</span>.<span class="cv">dataset</span>.<span class="cv">reviewLoaded</span> = <span class="cs">'true'</span>;
+    <span class="ck">const</span> <span class="cv">data</span> = <span class="ck">await</span> <span class="cf">fetch</span>(<span class="cs">`/reviews?id=<span class="cv">${<span class="cv">card</span>.<span class="cv">dataset</span>.<span class="cv">productId</span>}</span>`</span>).<span class="cf">then</span>(<span class="cv">r</span> => <span class="cv">r</span>.<span class="cf">json</span>());
+    <span class="cv">card</span>.<span class="cf">querySelector</span>(<span class="cs">'.review'</span>).<span class="cv">textContent</span> = <span class="cs">`★ <span class="cv">${<span class="cv">data</span>.<span class="cv">rating</span>}</span>`</span>;
+  },
+});</pre>
+      </div>
+
+      <!-- A-9 MAXIMUM -->
+      <div class="example-card">
+        <div class="example-header">
+          <span class="example-id">A-9</span>
+          <span class="example-title">MAXIMUM — সব options একসাথে</span>
+        </div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span><span class="pill on">callback</span><span class="pill on">relationSelector</span>
+          <span class="pill on">filter</span><span class="pill on">debounce</span><span class="pill on">once</span><span class="pill on">maxTriggers</span>
+        </div>
+        <div class="example-desc">.product-grid-এ in-stock card, debounced, max 10 বার, event + callback দুটোই।</div>
+<pre>sentinel.<span class="cf">watch</span>({
+  <span class="cv">selector</span>:         <span class="cs">'.card-product'</span>,
+  <span class="cv">relation</span>:         <span class="cs">'target'</span>,
+  <span class="cv">relationSelector</span>: <span class="cs">'.product-grid'</span>,
+  <span class="cv">eventName</span>:        <span class="cs">'card:a9'</span>,
+  <span class="cv">filter</span>:           (<span class="cv">card</span>) => <span class="cv">card</span>.<span class="cv">dataset</span>.<span class="cv">inStock</span> === <span class="cs">'true'</span>,
+  <span class="cv">debounce</span>:         <span class="cn">150</span>,
+  <span class="cv">once</span>:             <span class="ck">false</span>,
+  <span class="cv">maxTriggers</span>:      <span class="cn">10</span>,
+  <span class="cv">callback</span>:         ({ <span class="cv">element</span>, <span class="cv">timestamp</span> }) =>
+    console.<span class="cf">log</span>(<span class="cs">'[A-9 MAX]'</span>, <span class="cv">element</span>.<span class="cv">dataset</span>.<span class="cv">productId</span>, <span class="cv">timestamp</span>),
+});
+document.<span class="cf">addEventListener</span>(<span class="cs">'card:a9'</span>, ({ <span class="cv">detail</span> }) =>
+  analytics.<span class="cf">track</span>(<span class="cs">'instock_appeared'</span>, { <span class="cv">id</span>: <span class="cv">detail</span>.<span class="cv">element</span>.<span class="cv">dataset</span>.<span class="cv">productId</span> })
+);</pre>
+      </div>
+    </section>
+
+    <!-- PARENT EXAMPLES -->
+    <div class="section-divider">
+      <span class="section-divider-label">Examples — parent</span>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <section id="ex-parent">
+      <h2>B — relation: 'parent'</h2>
+      <p>.card-product এর parent container-এ child add/remove হয়েছে। Matched element = parent।</p>
+
+      <div class="example-card">
+        <div class="example-header"><span class="example-id green">B-1</span><span class="example-title">MINIMUM</span></div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span>
+          <span class="pill">relationSelector</span><span class="pill">filter</span><span class="pill">callback</span><span class="pill">debounce</span><span class="pill">once</span><span class="pill">maxTriggers</span>
+        </div>
+<pre>sentinel.<span class="cf">watch</span>({ <span class="cv">selector</span>: <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'parent'</span>, <span class="cv">eventName</span>: <span class="cs">'grid:b1'</span> });
+document.<span class="cf">addEventListener</span>(<span class="cs">'grid:b1'</span>, ({ <span class="cv">detail</span> }) => console.<span class="cf">log</span>(<span class="cs">'[B-1] parent changed:'</span>, <span class="cv">detail</span>.<span class="cv">element</span>));</pre>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header"><span class="example-id green">B-2</span><span class="example-title">+ callback — result counter update</span></div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span><span class="pill on">callback</span>
+          <span class="pill">relationSelector</span><span class="pill">filter</span><span class="pill">debounce</span><span class="pill">once</span><span class="pill">maxTriggers</span>
+        </div>
+        <div class="example-desc">"Showing N products" counter update করো।</div>
+<pre>sentinel.<span class="cf">watch</span>({
+  <span class="cv">selector</span>: <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'parent'</span>, <span class="cv">eventName</span>: <span class="cs">'grid:b2'</span>,
+  <span class="cv">callback</span>: ({ <span class="cv">element</span>: <span class="cv">parent</span> }) => {
+    <span class="ck">const</span> <span class="cv">count</span> = <span class="cv">parent</span>.<span class="cf">querySelectorAll</span>(<span class="cs">'.card-product'</span>).<span class="cv">length</span>;
+    document.<span class="cf">querySelector</span>(<span class="cs">'.results-count'</span>).<span class="cv">textContent</span> = <span class="cs">`Showing <span class="cv">${<span class="cv">count</span>}</span> products`</span>;
+  },
+});</pre>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header"><span class="example-id green">B-3</span><span class="example-title">+ relationSelector — specific container</span></div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span><span class="pill on">callback</span><span class="pill on">relationSelector</span>
+          <span class="pill">filter</span><span class="pill">debounce</span><span class="pill">once</span><span class="pill">maxTriggers</span>
+        </div>
+        <div class="example-desc">শুধু .product-grid parent হলে — modal বা widget ignore।</div>
+<pre>sentinel.<span class="cf">watch</span>({
+  <span class="cv">selector</span>: <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'parent'</span>, <span class="cv">eventName</span>: <span class="cs">'grid:b3'</span>,
+  <span class="cv">relationSelector</span>: <span class="cs">'.product-grid'</span>,
+  <span class="cv">callback</span>: ({ <span class="cv">element</span>: <span class="cv">grid</span> }) => console.<span class="cf">log</span>(<span class="cs">'[B-3] .product-grid changed'</span>, <span class="cv">grid</span>),
+});</pre>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header"><span class="example-id green">B-4</span><span class="example-title">+ filter — empty state handle</span></div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span><span class="pill on">callback</span><span class="pill on">filter</span>
+          <span class="pill">relationSelector</span><span class="pill">debounce</span><span class="pill">once</span><span class="pill">maxTriggers</span>
+        </div>
+<pre>sentinel.<span class="cf">watch</span>({
+  <span class="cv">selector</span>: <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'parent'</span>, <span class="cv">eventName</span>: <span class="cs">'grid:b4'</span>,
+  <span class="cv">filter</span>:   (<span class="cv">grid</span>) => <span class="cv">grid</span>.<span class="cf">querySelectorAll</span>(<span class="cs">'.card-product'</span>).<span class="cv">length</span> === <span class="cn">0</span>,
+  <span class="cv">callback</span>: () => document.<span class="cf">querySelector</span>(<span class="cs">'.empty-state'</span>).<span class="cv">hidden</span> = <span class="ck">false</span>,
+});</pre>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header"><span class="example-id green">B-5</span><span class="example-title">+ debounce — spinner hide</span></div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span><span class="pill on">callback</span><span class="pill on">debounce</span>
+          <span class="pill">relationSelector</span><span class="pill">filter</span><span class="pill">once</span><span class="pill">maxTriggers</span>
+        </div>
+<pre>sentinel.<span class="cf">watch</span>({
+  <span class="cv">selector</span>: <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'parent'</span>, <span class="cv">eventName</span>: <span class="cs">'grid:b5'</span>,
+  <span class="cv">debounce</span>: <span class="cn">200</span>,
+  <span class="cv">callback</span>: () => document.<span class="cf">querySelector</span>(<span class="cs">'.grid-spinner'</span>).<span class="cv">hidden</span> = <span class="ck">true</span>,
+});</pre>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header"><span class="example-id green">B-6</span><span class="example-title">+ once — প্রথম load detect</span></div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span><span class="pill on">callback</span><span class="pill on">once</span>
+          <span class="pill">relationSelector</span><span class="pill">filter</span><span class="pill">debounce</span><span class="pill">maxTriggers</span>
+        </div>
+<pre>sentinel.<span class="cf">watch</span>({
+  <span class="cv">selector</span>: <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'parent'</span>, <span class="cv">eventName</span>: <span class="cs">'grid:b6'</span>,
+  <span class="cv">once</span>:     <span class="ck">true</span>,
+  <span class="cv">callback</span>: ({ <span class="cv">element</span> }) => console.<span class="cf">log</span>(<span class="cs">'[B-6] first time cards loaded into:'</span>, <span class="cv">element</span>),
+});</pre>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header"><span class="example-id green">B-7</span><span class="example-title">MAXIMUM — সব options একসাথে</span></div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span><span class="pill on">callback</span><span class="pill on">relationSelector</span>
+          <span class="pill on">filter</span><span class="pill on">debounce</span><span class="pill on">once</span><span class="pill on">maxTriggers</span>
+        </div>
+<pre>sentinel.<span class="cf">watch</span>({
+  <span class="cv">selector</span>:         <span class="cs">'.card-product'</span>,
+  <span class="cv">relation</span>:         <span class="cs">'parent'</span>,
+  <span class="cv">relationSelector</span>: <span class="cs">'.product-grid'</span>,
+  <span class="cv">eventName</span>:        <span class="cs">'grid:b7'</span>,
+  <span class="cv">filter</span>:           (<span class="cv">grid</span>) => <span class="cv">grid</span>.<span class="cf">querySelectorAll</span>(<span class="cs">'.card-product'</span>).<span class="cv">length</span> > <span class="cn">0</span>,
+  <span class="cv">debounce</span>:         <span class="cn">200</span>,
+  <span class="cv">once</span>:             <span class="ck">false</span>,
+  <span class="cv">maxTriggers</span>:      <span class="cn">20</span>,
+  <span class="cv">callback</span>:         ({ <span class="cv">element</span>: <span class="cv">grid</span>, <span class="cv">added</span>, <span class="cv">removed</span> }) => {
+    <span class="ck">const</span> <span class="cv">a</span> = <span class="cv">added</span>.<span class="cf">filter</span>(<span class="cv">n</span> => <span class="cv">n</span>.<span class="cv">nodeType</span> === Node.<span class="cv">ELEMENT_NODE</span>).<span class="cv">length</span>;
+    <span class="ck">const</span> <span class="cv">r</span> = <span class="cv">removed</span>.<span class="cf">filter</span>(<span class="cv">n</span> => <span class="cv">n</span>.<span class="cv">nodeType</span> === Node.<span class="cv">ELEMENT_NODE</span>).<span class="cv">length</span>;
+    console.<span class="cf">log</span>(<span class="cs">`[B-7 MAX] +<span class="cv">${<span class="cv">a</span>}</span> -<span class="cv">${<span class="cv">r</span>}</span>`</span>);
+  },
+});</pre>
+      </div>
+    </section>
+
+    <!-- CHILD EXAMPLES -->
+    <div class="section-divider">
+      <span class="section-divider-label">Examples — child</span>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <section id="ex-child">
+      <h2>C — relation: 'child'</h2>
+      <p>.card-product এর ভেতরে কিছু mutate হয়েছে। Matched element = card নিজে।</p>
+
+      <div class="example-card">
+        <div class="example-header"><span class="example-id amber">C-1</span><span class="example-title">MINIMUM</span></div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span>
+          <span class="pill">relationSelector</span><span class="pill">filter</span><span class="pill">callback</span><span class="pill">debounce</span><span class="pill">once</span><span class="pill">maxTriggers</span>
+        </div>
+<pre>sentinel.<span class="cf">watch</span>({ <span class="cv">selector</span>: <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'child'</span>, <span class="cv">eventName</span>: <span class="cs">'card:c1'</span> });
+document.<span class="cf">addEventListener</span>(<span class="cs">'card:c1'</span>, ({ <span class="cv">detail</span> }) => console.<span class="cf">log</span>(<span class="cs">'[C-1]'</span>, <span class="cv">detail</span>.<span class="cv">element</span>));</pre>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header"><span class="example-id amber">C-2</span><span class="example-title">+ relationSelector — শুধু price বদলালে</span></div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span><span class="pill on">callback</span><span class="pill on">relationSelector</span>
+          <span class="pill">filter</span><span class="pill">debounce</span><span class="pill">once</span><span class="pill">maxTriggers</span>
+        </div>
+        <div class="example-desc">Currency switcher price update করলে detect করো।</div>
+<pre>sentinel.<span class="cf">watch</span>({
+  <span class="cv">selector</span>: <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'child'</span>, <span class="cv">eventName</span>: <span class="cs">'card:c2'</span>,
+  <span class="cv">relationSelector</span>: <span class="cs">'.card-product__price'</span>,
+  <span class="cv">callback</span>: ({ <span class="cv">element</span>: <span class="cv">card</span>, <span class="cv">oldValue</span> }) => {
+    <span class="ck">const</span> <span class="cv">newPrice</span> = <span class="cv">card</span>.<span class="cf">querySelector</span>(<span class="cs">'.card-product__price'</span>)?.<span class="cv">textContent</span>.<span class="cf">trim</span>();
+    console.<span class="cf">log</span>(<span class="cs">'[C-2] price:'</span>, <span class="cv">oldValue</span>, <span class="cs">'→'</span>, <span class="cv">newPrice</span>);
+  },
+});</pre>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header"><span class="example-id amber">C-3</span><span class="example-title">+ filter — wishlist activate</span></div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span><span class="pill on">callback</span><span class="pill on">filter</span>
+          <span class="pill">relationSelector</span><span class="pill">debounce</span><span class="pill">once</span><span class="pill">maxTriggers</span>
+        </div>
+<pre>sentinel.<span class="cf">watch</span>({
+  <span class="cv">selector</span>: <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'child'</span>, <span class="cv">eventName</span>: <span class="cs">'card:c3'</span>,
+  <span class="cv">filter</span>:   (<span class="cv">card</span>) => <span class="cv">card</span>.<span class="cf">querySelector</span>(<span class="cs">'.wishlist-btn--active'</span>) !== <span class="ck">null</span>,
+  <span class="cv">callback</span>: ({ <span class="cv">element</span>: <span class="cv">card</span> }) =>
+    analytics.<span class="cf">track</span>(<span class="cs">'wishlist_add'</span>, { <span class="cv">productId</span>: <span class="cv">card</span>.<span class="cv">dataset</span>.<span class="cv">productId</span> }),
+});</pre>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header"><span class="example-id amber">C-4</span><span class="example-title">+ debounce — qty input</span></div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span><span class="pill on">callback</span><span class="pill on">debounce</span>
+          <span class="pill">relationSelector</span><span class="pill">filter</span><span class="pill">once</span><span class="pill">maxTriggers</span>
+        </div>
+        <div class="example-desc">Quantity input প্রতি keystroke-এ fire করে — debounce দিয়ে থামাও।</div>
+<pre>sentinel.<span class="cf">watch</span>({
+  <span class="cv">selector</span>: <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'child'</span>, <span class="cv">eventName</span>: <span class="cs">'card:c4'</span>,
+  <span class="cv">debounce</span>: <span class="cn">400</span>,
+  <span class="cv">callback</span>: ({ <span class="cv">element</span>: <span class="cv">card</span> }) => {
+    <span class="ck">const</span> <span class="cv">qty</span> = <span class="cv">card</span>.<span class="cf">querySelector</span>(<span class="cs">'.qty-input'</span>)?.<span class="cv">value</span>;
+    console.<span class="cf">log</span>(<span class="cs">'[C-4] qty settled:'</span>, <span class="cv">qty</span>);
+  },
+});</pre>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header"><span class="example-id amber">C-5</span><span class="example-title">+ once — out-of-stock detect</span></div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span><span class="pill on">callback</span><span class="pill on">filter</span><span class="pill on">once</span>
+          <span class="pill">relationSelector</span><span class="pill">debounce</span><span class="pill">maxTriggers</span>
+        </div>
+<pre>sentinel.<span class="cf">watch</span>({
+  <span class="cv">selector</span>: <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'child'</span>, <span class="cv">eventName</span>: <span class="cs">'card:c5'</span>,
+  <span class="cv">once</span>:     <span class="ck">true</span>,
+  <span class="cv">filter</span>:   (<span class="cv">card</span>) => <span class="cv">card</span>.<span class="cf">querySelector</span>(<span class="cs">'.add-to-cart[disabled]'</span>) !== <span class="ck">null</span>,
+  <span class="cv">callback</span>: ({ <span class="cv">element</span>: <span class="cv">card</span> }) => <span class="cv">card</span>.<span class="cv">classList</span>.<span class="cf">add</span>(<span class="cs">'card-product--oos'</span>),
+});</pre>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header"><span class="example-id amber">C-6</span><span class="example-title">+ relationSelector + filter — variant image swap</span></div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span><span class="pill on">callback</span><span class="pill on">relationSelector</span><span class="pill on">filter</span>
+          <span class="pill">debounce</span><span class="pill">once</span><span class="pill">maxTriggers</span>
+        </div>
+        <div class="example-desc">Image src attribute বদলালেই detect — অন্য attribute ignore।</div>
+<pre>sentinel.<span class="cf">watch</span>({
+  <span class="cv">selector</span>: <span class="cs">'.card-product'</span>, <span class="cv">relation</span>: <span class="cs">'child'</span>, <span class="cv">eventName</span>: <span class="cs">'card:c6'</span>,
+  <span class="cv">relationSelector</span>: <span class="cs">'.card-product__image'</span>,
+  <span class="cv">filter</span>:   (<span class="cv">_card</span>, { <span class="cv">attributeName</span> }) => <span class="cv">attributeName</span> === <span class="cs">'src'</span>,
+  <span class="cv">callback</span>: ({ <span class="cv">element</span>: <span class="cv">card</span>, <span class="cv">oldValue</span> }) => {
+    <span class="ck">const</span> <span class="cv">newSrc</span> = <span class="cv">card</span>.<span class="cf">querySelector</span>(<span class="cs">'.card-product__image'</span>)?.<span class="cf">getAttribute</span>(<span class="cs">'src'</span>);
+    console.<span class="cf">log</span>(<span class="cs">'[C-6] image:'</span>, <span class="cv">oldValue</span>, <span class="cs">'→'</span>, <span class="cv">newSrc</span>);
+  },
+});</pre>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header"><span class="example-id amber">C-7</span><span class="example-title">MAXIMUM — সব options একসাথে</span></div>
+        <div class="option-pills">
+          <span class="pill on">selector</span><span class="pill on">eventName</span><span class="pill on">callback</span><span class="pill on">relationSelector</span>
+          <span class="pill on">filter</span><span class="pill on">debounce</span><span class="pill on">once</span><span class="pill on">maxTriggers</span>
+        </div>
+<pre>sentinel.<span class="cf">watch</span>({
+  <span class="cv">selector</span>:         <span class="cs">'.card-product'</span>,
+  <span class="cv">relation</span>:         <span class="cs">'child'</span>,
+  <span class="cv">relationSelector</span>: <span class="cs">'.card-product__price'</span>,
+  <span class="cv">eventName</span>:        <span class="cs">'card:c7'</span>,
+  <span class="cv">filter</span>:           (<span class="cv">card</span>) => {
+    <span class="ck">const</span> <span class="cv">v</span> = <span class="cf">parseFloat</span>((<span class="cv">card</span>.<span class="cf">querySelector</span>(<span class="cs">'.card-product__price'</span>)?.<span class="cv">textContent</span> ?? <span class="cs">''</span>)
+      .<span class="cf">replace</span>(<span class="co">/[^0-9.]/g</span>, <span class="cs">''</span>));
+    <span class="ck">return</span> <span class="cv">v</span> > <span class="cn">0</span>;
+  },
+  <span class="cv">debounce</span>:    <span class="cn">100</span>,
+  <span class="cv">once</span>:        <span class="ck">false</span>,
+  <span class="cv">maxTriggers</span>: <span class="cn">50</span>,
+  <span class="cv">callback</span>:    ({ <span class="cv">element</span>: <span class="cv">card</span>, <span class="cv">oldValue</span>, <span class="cv">timestamp</span> }) => {
+    <span class="ck">const</span> <span class="cv">newPrice</span> = <span class="cv">card</span>.<span class="cf">querySelector</span>(<span class="cs">'.card-product__price'</span>)?.<span class="cv">textContent</span>.<span class="cf">trim</span>();
+    analytics.<span class="cf">track</span>(<span class="cs">'price_change'</span>, { <span class="cv">id</span>: <span class="cv">card</span>.<span class="cv">dataset</span>.<span class="cv">productId</span>, <span class="cv">oldValue</span>, <span class="cv">newPrice</span>, <span class="cv">timestamp</span> });
+  },
+});
+document.<span class="cf">addEventListener</span>(<span class="cs">'card:c7'</span>, ({ <span class="cv">detail</span> }) =>
+  console.<span class="cf">log</span>(<span class="cs">'[C-7 MAX event]'</span>, <span class="cv">detail</span>.<span class="cv">element</span>.<span class="cv">dataset</span>.<span class="cv">productId</span>)
+);</pre>
+      </div>
+    </section>
+
+    <!-- LIFECYCLE -->
+    <div class="section-divider">
+      <span class="section-divider-label">Examples — Lifecycle</span>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <section id="ex-lifecycle">
+      <h2>D — Lifecycle & Runtime API</h2>
+
+      <div class="example-card">
+        <div class="example-header"><span class="example-id">D-1</span><span class="example-title">unwatch — নির্দিষ্ট সময়ে সরিয়ে দাও</span></div>
+<pre><span class="ck">const</span> <span class="cv">id</span> = sentinel.<span class="cf">watch</span>({ <span class="cv">selector</span>: <span class="cs">'.card-product'</span>, <span class="cv">eventName</span>: <span class="cs">'card:temp'</span> });
+<span class="cf">setTimeout</span>(() => sentinel.<span class="cf">unwatch</span>(<span class="cv">id</span>), <span class="cn">5000</span>); <span class="cm">// ৫ সেকেন্ড পরে সরাও</span></pre>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header"><span class="example-id">D-2</span><span class="example-title">pause + resume — নিজের write-এ react করবে না</span></div>
+<pre><span class="ck">function</span> <span class="cf">replaceCards</span>(<span class="cv">html</span>) {
+  <span class="cv">sentinel</span>.<span class="cf">pause</span>();
+  document.<span class="cf">querySelector</span>(<span class="cs">'.product-grid'</span>).<span class="cv">innerHTML</span> = <span class="cv">html</span>;
+  <span class="cv">sentinel</span>.<span class="cf">resume</span>();
+}</pre>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header"><span class="example-id">D-3</span><span class="example-title">isPaused — state check</span></div>
+<pre><span class="ck">if</span> (!<span class="cv">sentinel</span>.<span class="cv">isPaused</span>) {
+  <span class="cm">// safe to do expensive work</span>
+}</pre>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header"><span class="example-id">D-4</span><span class="example-title">listWatchers — debugging</span></div>
+<pre>console.<span class="cf">table</span>(<span class="cv">sentinel</span>.<span class="cf">listWatchers</span>());
+<span class="cm">// id | selector | relation | eventName | debounce | triggerCount</span></pre>
+      </div>
+
+      <div class="example-card">
+        <div class="example-header"><span class="example-id">D-5</span><span class="example-title">destroy — teardown</span></div>
+<pre><span class="cm">// Page unload</span>
+window.<span class="cf">addEventListener</span>(<span class="cs">'beforeunload'</span>, () => <span class="cv">sentinel</span>.<span class="cf">destroy</span>());
+
+<span class="cm">// SPA route change (Shopify)</span>
+document.<span class="cf">addEventListener</span>(<span class="cs">'shopify:section:unload'</span>, () => <span class="cv">sentinel</span>.<span class="cf">destroy</span>());</pre>
+      </div>
+    </section>
+
+    <!-- MATRIX -->
+    <div class="section-divider">
+      <span class="section-divider-label">Option Matrix</span>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <section id="matrix">
+      <h2>Option Matrix</h2>
+      <p>কোন example-এ কোন option আছে এক নজরে।</p>
+      <table class="matrix">
+        <tr>
+          <th>Example</th><th>relation</th><th>relSel</th><th>filter</th><th>callback</th><th>debounce</th><th>once</th><th>maxT</th>
+        </tr>
+        <tr><td>A-1</td><td>target</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+        <tr><td>A-2</td><td>target</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+        <tr><td>A-3</td><td>target</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+        <tr><td>A-4</td><td>target</td><td class="no">—</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+        <tr><td>A-5</td><td>target</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td></tr>
+        <tr><td>A-6</td><td>target</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td></tr>
+        <tr><td>A-7</td><td>target</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td></tr>
+        <tr><td>A-8</td><td>target</td><td class="no">—</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td></tr>
+        <tr><td>A-9 MAX</td><td>target</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+        <tr><td>B-1</td><td>parent</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+        <tr><td>B-2</td><td>parent</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+        <tr><td>B-3</td><td>parent</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+        <tr><td>B-4</td><td>parent</td><td class="no">—</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+        <tr><td>B-5</td><td>parent</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td></tr>
+        <tr><td>B-6</td><td>parent</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td></tr>
+        <tr><td>B-7 MAX</td><td>parent</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+        <tr><td>C-1</td><td>child</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+        <tr><td>C-2</td><td>child</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+        <tr><td>C-3</td><td>child</td><td class="no">—</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+        <tr><td>C-4</td><td>child</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td></tr>
+        <tr><td>C-5</td><td>child</td><td class="no">—</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td></tr>
+        <tr><td>C-6</td><td>child</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+        <tr><td>C-7 MAX</td><td>child</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+      </table>
+    </section>
+
+    <div style="height: 4rem;"></div>
+  </main>
+</div>
+
+<script>
+  // sidebar active link highlight on scroll
+  const links = document.querySelectorAll('.nav-link');
+  const sections = document.querySelectorAll('section[id], div[id]');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
