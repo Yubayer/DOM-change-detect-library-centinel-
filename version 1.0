@@ -1,0 +1,385 @@
+/* ============================================================
+ * DOMSentinel v1.0
+ * Production-grade DOM mutation detection system.
+ *
+ * একটাই MutationObserver পুরো document watch করে।
+ * Multiple watcher register করা যায়, প্রতিটার নিজস্ব
+ * selector, relation, relationSelector আর eventName আছে।
+ *
+ * relation values:
+ *   'target'  → selector element নিজেই add/remove/change হয়েছে
+ *   'parent'  → selector-এর parent-এ child add/remove হয়েছে
+ *   'child'   → selector-এর ভেতরে কিছু mutate হয়েছে
+ *
+ * relationSelector (optional):
+ *   'parent' → শুধু এই selector-এর parent-এ হলে match করবে
+ *   'child'  → শুধু এই selector-এর child-এ হলে match করবে
+ * ============================================================ */
+
+class DOMSentinel {
+  #observer  = null;  // single shared MutationObserver for the whole document
+  #watchers  = [];    // all registered watch configs
+  #idCounter = 0;     // auto-increment id per watcher
+
+  constructor() {
+    this.#observer = new MutationObserver(this.#onMutations.bind(this));
+
+    // পুরো document একবারেই observe — subtree: true সব nested level cover করে
+    this.#observer.observe(document.documentElement, {
+      childList: true,             // child node add/remove
+      subtree: true,               // সব nested descendants
+      attributes: true,            // attribute change
+      characterData: true,         // text node change
+      attributeOldValue: true,     // attribute-এর আগের value
+      characterDataOldValue: true, // text-এর আগের value
+    });
+  }
+
+  /* ================================================================
+   * Private — mutation processing
+   * ================================================================ */
+
+  /* প্রতিটা mutation batch এখানে আসে */
+  #onMutations(mutations) {
+    for (const mutation of mutations) {
+      for (const watcher of this.#watchers) {
+        const matched = this.#resolveMatch(mutation, watcher);
+        if (matched) {
+          this.#dispatch(watcher.eventName, matched, mutation, watcher);
+        }
+      }
+    }
+  }
+
+  /* relation অনুযায়ী সঠিক match function-এ route করে */
+  #resolveMatch(mutation, watcher) {
+    const { selector, relation, relationSelector } = watcher;
+
+    if (relation === 'target') return this.#matchTarget(mutation, selector);
+    if (relation === 'parent') return this.#matchParent(mutation, selector, relationSelector);
+    if (relation === 'child')  return this.#matchChild(mutation, selector, relationSelector);
+
+    return null;
+  }
+
+  /* --
+   * 'target': added বা removed node নিজেই selector match করে।
+   * attribute / characterData change হলে target element-এও check করে।
+   * -- */
+  #matchTarget(mutation, selector) {
+    if (mutation.type === 'childList') {
+      const nodes = [...mutation.addedNodes, ...mutation.removedNodes];
+
+      for (const node of nodes) {
+        if (node.nodeType !== Node.ELEMENT_NODE) continue;
+
+        // directly এই node-ই কি target?
+        if (node.matches(selector)) return node;
+
+        // নাকি এই node-এর ভেতরে target আছে? (wrapper সহ add হলে)
+        const inner = node.querySelector?.(selector);
+        if (inner) return inner;
+      }
+    }
+
+    if (mutation.type === 'attributes' || mutation.type === 'characterData') {
+      const el = mutation.target.nodeType === Node.ELEMENT_NODE
+        ? mutation.target
+        : mutation.target.parentElement;
+
+      if (el?.matches(selector)) return el;
+    }
+
+    return null;
+  }
+
+  /* --
+   * 'parent': selector-এর parent element-এ child add/remove হয়েছে।
+   * relationSelector দেওয়া থাকলে — শুধু সেই specific parent-এ match করবে।
+   * -- */
+  #matchParent(mutation, selector, relationSelector) {
+    if (mutation.type !== 'childList') return null;
+
+    const parent = mutation.target;
+    if (parent.nodeType !== Node.ELEMENT_NODE) return null;
+
+    // relationSelector দেওয়া থাকলে — parent সেটা match না করলে bail out
+    if (relationSelector && !parent.matches(relationSelector)) return null;
+
+    const nodes = [...mutation.addedNodes, ...mutation.removedNodes];
+
+    for (const node of nodes) {
+      if (node.nodeType !== Node.ELEMENT_NODE) continue;
+
+      // added/removed node কি target, অথবা তার ভেতরে target আছে?
+      if (node.matches(selector) || node.querySelector?.(selector)) {
+        return parent; // parent element-কেই match হিসেবে return করি
+      }
+    }
+
+    return null;
+  }
+
+  /* --
+   * 'child': mutation যেখানেই হোক, closest() দিয়ে উপরে উঠে selector খুঁজি।
+   * relationSelector দেওয়া থাকলে — origin সেই specific child-এর ভেতরে
+   * থাকতে হবে, না হলে bail out।
+   * -- */
+  #matchChild(mutation, selector, relationSelector) {
+    const origin = mutation.target.nodeType === Node.ELEMENT_NODE
+      ? mutation.target
+      : mutation.target.parentElement;
+
+    // closest() দিয়ে উপরে উঠে matching card খুঁজি
+    const card = origin?.closest(selector) ?? null;
+    if (!card) return null;
+
+    // relationSelector দেওয়া থাকলে — origin কি সেই specific child-এর ভেতরে?
+    if (relationSelector && !origin.closest(relationSelector)) return null;
+
+    return card;
+  }
+
+  /* ---- custom event dispatch করে document-এ ---- */
+  #dispatch(eventName, element, mutation, watcher) {
+    document.dispatchEvent(
+      new CustomEvent(eventName, {
+        bubbles: false,
+        detail: {
+          element,                                    // match হওয়া element
+          relation: watcher.relation,                 // কোন relation-এ match হয়েছে
+          relationSelector: watcher.relationSelector, // narrowing selector (if any)
+          mutationType: mutation.type,                // 'childList' | 'attributes' | 'characterData'
+          added: [...(mutation.addedNodes   ?? [])],  // নতুন nodes
+          removed: [...(mutation.removedNodes ?? [])], // সরানো nodes
+          attributeName: mutation.attributeName ?? null,
+          oldValue: mutation.oldValue ?? null,
+          timestamp: Date.now(),
+        },
+      })
+    );
+  }
+
+  /* ================================================================
+   * Public API
+   * ================================================================ */
+
+  /**
+   * একটা watcher register করো।
+   *
+   * @param {object}                         config
+   * @param {string}                         config.selector
+   *   যে element watch করতে চাও — CSS selector।
+   *   e.g. '.card-product'
+   *
+   * @param {'target'|'parent'|'child'}      [config.relation='target']
+   *   'target' → selector element নিজেই mutate হয়েছে
+   *   'parent' → selector-এর parent-এ child add/remove হয়েছে
+   *   'child'  → selector-এর ভেতরে কিছু mutate হয়েছে
+   *
+   * @param {string|null}                    [config.relationSelector=null]
+   *   (optional) relation-এর element-কে আরো narrow করে।
+   *   'parent' হলে → শুধু এই selector-এর parent match করলে fire হবে
+   *   'child'  হলে → শুধু এই selector-এর ভেতরে থাকা child match করলে fire হবে
+   *
+   * @param {string}                         config.eventName
+   *   match হলে document-এ কোন CustomEvent dispatch হবে।
+   *   e.g. 'card:added'
+   *
+   * @returns {number} watchId — unwatch()-এ লাগবে
+   */
+  watch({ selector, relation = 'target', relationSelector = null, eventName }) {
+    if (!selector || !eventName) {
+      throw new Error('[DOMSentinel] selector and eventName are required.');
+    }
+    if (!['target', 'parent', 'child'].includes(relation)) {
+      throw new Error('[DOMSentinel] relation must be: target | parent | child');
+    }
+
+    const id = ++this.#idCounter;
+    this.#watchers.push({ id, selector, relation, relationSelector, eventName });
+    return id;
+  }
+
+  /**
+   * একটা registered watcher সরিয়ে দাও।
+   * @param {number} watchId — watch() থেকে return হওয়া id
+   */
+  unwatch(watchId) {
+    this.#watchers = this.#watchers.filter(w => w.id !== watchId);
+  }
+
+  /**
+   * সব watcher list করো — debugging-এ কাজে আসে।
+   * @returns {object[]}
+   */
+  listWatchers() {
+    return this.#watchers.map(({ id, selector, relation, relationSelector, eventName }) => ({
+      id, selector, relation, relationSelector, eventName,
+    }));
+  }
+
+  /**
+   * Observer disconnect করো এবং সব watcher clear করো।
+   * Page unload বা component destroy-এ call করো।
+   */
+  destroy() {
+    this.#observer.disconnect();
+    this.#watchers = [];
+  }
+}
+
+
+/* ================================================================
+ * USE CASE EXAMPLES
+ * ================================================================
+ *
+ * Shopify collection page — AJAX filtering চলছে,
+ * product card add/remove/update detect করে review inject করবো।
+ * ================================================================ */
+
+const sentinel = new DOMSentinel();
+
+
+/* ----------------------------------------------------------------
+ * USE CASE 1 — 'target'
+ *
+ * AJAX filter করলে `.card-product` নিজেই DOM-এ add/remove হয়।
+ * প্রতিটা নতুন card detect করে review API call করবো।
+ * ---------------------------------------------------------------- */
+
+const watchCardAdded = sentinel.watch({
+  selector:  '.card-product',
+  relation:  'target',
+  eventName: 'card:added',
+});
+
+document.addEventListener('card:added', async (e) => {
+  const { element: card, added, removed } = e.detail;
+
+  // remove হওয়া card হলে skip
+  if (removed.length && !added.length) return;
+
+  const productId = card.dataset.productId;
+  if (!productId || card.dataset.reviewLoaded === 'true') return;
+
+  // duplicate call এড়াতে mark করে রাখো
+  card.dataset.reviewLoaded = 'true';
+
+  try {
+    const res  = await fetch(`/apps/reviews/api?product_id=${productId}`);
+    const data = await res.json();
+
+    const reviewEl = card.querySelector('.card-product__review');
+    if (reviewEl) {
+      reviewEl.innerHTML = `★ ${data.rating} <span>(${data.count})</span>`;
+    }
+  } catch (err) {
+    console.error(`[DOMSentinel] Review fetch failed for ${productId}:`, err);
+    card.dataset.reviewLoaded = 'false'; // retry allow করতে
+  }
+});
+
+
+/* ----------------------------------------------------------------
+ * USE CASE 2 — 'parent' + relationSelector
+ *
+ * শুধু `.product-grid` wrapper-এ card add/remove হলে detect করবো।
+ * অন্য কোনো container-এ `.card-product` যোগ হলে ignore করবো।
+ *
+ * কাজে আসে: grid-level loading state দেখানো, analytics, skeleton
+ * ---------------------------------------------------------------- */
+
+sentinel.watch({
+  selector:          '.card-product',
+  relation:          'parent',
+  relationSelector:  '.product-grid',   // শুধু এই parent হলে
+  eventName:         'grid:card-changed',
+});
+
+document.addEventListener('grid:card-changed', (e) => {
+  const { element: grid, added, removed } = e.detail;
+
+  const addedCount   = added.filter(n => n.nodeType === Node.ELEMENT_NODE).length;
+  const removedCount = removed.filter(n => n.nodeType === Node.ELEMENT_NODE).length;
+
+  console.log(`[Grid] +${addedCount} added, -${removedCount} removed`);
+
+  // যেমন: grid empty হলে empty state দেখাও
+  const remaining = grid.querySelectorAll('.card-product').length;
+  const emptyMsg  = grid.querySelector('.product-grid__empty');
+
+  if (emptyMsg) {
+    emptyMsg.hidden = remaining > 0;
+  }
+});
+
+
+/* ----------------------------------------------------------------
+ * USE CASE 3 — 'child' + relationSelector
+ *
+ * Card-এর ভেতরে শুধু `.card-product__price` বদলালে detect করবো।
+ * যেমন: currency switcher price update করলে — আমরা সেটা ধরবো।
+ *
+ * কাজে আসে: price change tracking, analytics event fire করা
+ * ---------------------------------------------------------------- */
+
+sentinel.watch({
+  selector:         '.card-product',
+  relation:         'child',
+  relationSelector: '.card-product__price',  // শুধু price change হলে
+  eventName:        'card:price-changed',
+});
+
+document.addEventListener('card:price-changed', (e) => {
+  const { element: card, oldValue } = e.detail;
+
+  const productId  = card.dataset.productId;
+  const priceEl    = card.querySelector('.card-product__price');
+  const newPrice   = priceEl?.textContent?.trim();
+
+  console.log(`[Price] Product ${productId}: "${oldValue}" → "${newPrice}"`);
+
+  // analytics event পাঠাও
+  window.analytics?.track('product_price_updated', { productId, newPrice });
+});
+
+
+/* ----------------------------------------------------------------
+ * USE CASE 4 — 'child' (no relationSelector)
+ *
+ * Card-এর ভেতরে যেকোনো কিছু বদলালে detect করবো।
+ * যেমন: wishlist button toggle হলে, badge বদলালে।
+ * ---------------------------------------------------------------- */
+
+sentinel.watch({
+  selector:  '.card-product',
+  relation:  'child',
+  eventName: 'card:inner-changed',
+});
+
+document.addEventListener('card:inner-changed', (e) => {
+  const { element: card, mutationType, attributeName } = e.detail;
+
+  // attribute change হলে কোন attribute সেটা জানা যাবে
+  if (mutationType === 'attributes') {
+    console.log(`[Card] Attribute changed: ${attributeName} on`, card);
+  }
+
+  // childList change — ভেতরে node add/remove হয়েছে
+  if (mutationType === 'childList') {
+    console.log(`[Card] Inner DOM changed on`, card);
+  }
+});
+
+
+/* ----------------------------------------------------------------
+ * CLEANUP — page unload বা SPA route change-এ
+ * ---------------------------------------------------------------- */
+
+window.addEventListener('beforeunload', () => {
+  sentinel.destroy();
+});
+
+// অথবা specific watcher সরাতে:
+// sentinel.unwatch(watchCardAdded);
